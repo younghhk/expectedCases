@@ -1,0 +1,45 @@
+Package: expectedCases
+Type: Package
+Title: Project Expected Cancer Cases from Cohort Age Bands and National Rates
+Version: 0.1.0
+Authors@R: 
+    c(
+      person(given = "Hyokyoung (Grace)",
+             family = "Hong",
+             role = c("aut", "cre"),
+             email = "grace.hong@nih.gov"),
+      person(given = "Contributors",
+             role = "ctb")
+    )
+Maintainer: Hyokyoung G. Hong <grace.hong@nih.gov>
+Description: Estimates expected cancer cases over time for a study cohort using
+    age-band incidence and all-cause mortality rates. The cohort, supplied in
+    5-year age bands, is internally expanded to single-year ages and propagated
+    forward year-by-year: new cases are generated from age-specific incidence,
+    deaths are applied from age-specific mortality, and survivors age by +1.
+    Open-ended rate bands such as "85+" are supported (extended up to a user-
+    specified 'age_max', typically 100). Outputs include a markdown-ready
+    summary table and a year-by-year projection table (alive at start,
+    new cases, deaths, aged-out, alive at end, cumulative cases).
+License: MIT + file LICENSE
+URL: https://github.com/your-org/expectedCases
+BugReports: https://github.com/your-org/expectedCases/issues
+Depends:
+    R (>= 4.1.0)
+Imports:
+    dplyr,
+    tibble,
+    purrr,
+    rlang
+Suggests:
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+Encoding: UTF-8
+Language: en-US
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+NeedsCompilation: no
+
