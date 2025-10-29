@@ -4,3 +4,9 @@
 .httr-oauth
 .DS_Store
 .quarto
+.Rproj.user
+.Rhistory
+.DS_Store
+inst/doc
+/doc/
+/Meta/

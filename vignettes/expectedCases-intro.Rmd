@@ -145,8 +145,6 @@ result <- run_cancer_projection(
 )
 ```
 
-The `run_cancer_projection()` function integrates population counts, sex proportions, and external rate tables to estimate expected cancer cases across the projection period.
-
 
 
 

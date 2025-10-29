@@ -1,7 +1,0 @@
-^README\.Rmd$
-^LICENSE\.md$
-^\.github$
-^.*\.Rproj$
-^\.Rproj\.user$
-^cran-comments\.md$
-^NEWS\.md$

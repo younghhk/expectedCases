@@ -1,3 +1,10 @@
-^expectedCasesR\.Rproj$
+^.*\.Rproj$
 ^\.Rproj\.user$
-^LICENSE\.md$
+^\.Rhistory$
+^\.RData$
+^\.DS_Store$
+^doc$
+^Meta$
+^build$
+^.*\.Rcheck$
+^cran-comments\.md$
