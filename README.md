@@ -2,6 +2,10 @@
   [![R-CMD-check](https://github.com/younghhk/expectedCases/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/younghhk/expectedCases/actions/workflows/R-CMD-check.yaml)
   <!-- badges: end -->
 
+<!-- badges: start -->
+  [![Codecov test coverage](https://codecov.io/gh/younghhk/expectedCases/graph/badge.svg)](https://app.codecov.io/gh/younghhk/expectedCases)
+  <!-- badges: end -->
+  
 ## expectedCases
 
 Project expected cancer cases for a cohort using age-specific incidence and mortality rates. The package expands 5-year age-band counts to single-year ages, applies sex-specific rates, and simulates annual aging, incidence, and all-cause mortality.
