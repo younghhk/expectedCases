@@ -1,3 +1,5 @@
+[![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 ## expectedCases
 
 Project expected cancer cases for a cohort using age-specific incidence and mortality rates. The package expands 5-year age-band counts to single-year ages, applies sex-specific rates, and simulates annual aging, incidence, and all-cause mortality.
