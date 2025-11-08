@@ -8,3 +8,4 @@
 ^build$
 ^.*\.Rcheck$
 ^cran-comments\.md$
+^\.github$
