@@ -3,7 +3,7 @@
 Project expected cancer cases for a cohort using age-specific incidence and mortality rates. The package expands 5-year age-band counts to single-year ages, applies sex-specific rates, and simulates annual aging, incidence, and all-cause mortality.
 
 
-📘 See the full vignette: [Tutorial: expectedCases](https://github.com/younghhk/expectedCases/blob/master/vignettes/expectedCases-intro.Rmd)
+📘 See the full vignette: [Tutorial: expectedCases](https://github.com/younghhk/expectedCases/blob/master/Vignettes_expectedCases.pdf)
 
 ## Installation
 
