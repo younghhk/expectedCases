@@ -1,5 +1,6 @@
-[![R-CMD-check](https://github.com/younghhk/expectedCases/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/younghhk/expectedCases/actions)
-
+ <!-- badges: start -->
+  [![R-CMD-check](https://github.com/younghhk/expectedCases/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/younghhk/expectedCases/actions/workflows/R-CMD-check.yaml)
+  <!-- badges: end -->
 
 ## expectedCases
 
