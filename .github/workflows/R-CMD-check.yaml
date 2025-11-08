@@ -1,4 +1,3 @@
-
 name: R-CMD-check
 
 on:
@@ -34,4 +33,3 @@ jobs:
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
-
