@@ -126,13 +126,13 @@ ggplot(projection_tbl, aes(year, cum_cases, color = Sex)) +
 
 If you use this code or method, please cite as:
 
-Vogtmann, E. & Hong, G. (2025). Estimating Expected Colorectal Cancer Cases Using National Rates and Cohort Data. GitHub Repository.
+Vogtmann, E. & Hong, G. (2025). Estimating Expected Colorectal Cancer Cases for Cohort Data. GitHub Repository.
 
 
 
 ## 🔒 Repository Access
 
-This repository is currently restricted to authorized collaborators.
+Access is currently limited to authorized collaborators pending full program verification.
 
 Last updated: October 2025
 
