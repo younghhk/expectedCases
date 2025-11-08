@@ -1,10 +1,8 @@
- <!-- badges: start -->
-  [![R-CMD-check](https://github.com/younghhk/expectedCases/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/younghhk/expectedCases/actions/workflows/R-CMD-check.yaml)
-  <!-- badges: end -->
-
 <!-- badges: start -->
-  [![Codecov test coverage](https://codecov.io/gh/younghhk/expectedCases/graph/badge.svg)](https://app.codecov.io/gh/younghhk/expectedCases)
-  <!-- badges: end -->
+[![R-CMD-check](https://github.com/younghhk/expectedCases/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/younghhk/expectedCases/actions/workflows/R-CMD-check.yaml)
+[![codecov](https://codecov.io/gh/younghhk/expectedCases/graph/badge.svg)](https://app.codecov.io/gh/younghhk/expectedCases)
+[![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+<!-- badges: end -->
   
 ## expectedCases
 
