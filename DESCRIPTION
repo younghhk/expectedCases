@@ -1,7 +1,7 @@
 Package: expectedCases
 Type: Package
-Title: Project Expected Cancer Cases from Cohort Age Bands and National Rates
-Version: 0.1.0
+Title: Estimate Expected Cancer Cases for Cohorts
+Version:  0.1.2
 Authors@R: 
     c(
       person(given = "Hyokyoung (Grace)",

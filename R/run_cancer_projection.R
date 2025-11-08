@@ -1,3 +1,11 @@
+# ==========================================================
+# Project expected cancer cases for a cohort (FULL SCRIPT)
+# - strict age-band parsing & validation (catches "o" vs "0")
+# - overlap & coverage checks (single-age level)
+# - supports 85+ via open-ended band extended to age_max
+# - decimals kept internally; rounding only for display
+# ==========================================================
+
 #' Project expected cancer cases for a cohort
 #'
 #' @description
@@ -15,8 +23,8 @@
 #' @param female_share,male_share Numeric values between 0 and 1; internally normalized
 #'   if they do not sum to 1.
 #' @param female_inc_wide,female_mort_5y Tibbles with `band`, `rate_per100k`
-#'   for **female** incidence and mortality.
-#' @param male_inc_wide,male_mort_5y Same for **male**.
+#'   for female incidence and mortality.
+#' @param male_inc_wide,male_mort_5y Same for male.
 #' @param study_start,study_end Integers, recruitment window.
 #' @param age_min,age_max Integers defining modeled age range.
 #' @param begin_year Optional integer; default = floor(midpoint of
@@ -24,22 +32,10 @@
 #' @param end_year Final projection year (inclusive).
 #' @param diag_years Optional integer vector of years to return in diagnostics;
 #'   default includes `begin_year`, 2030, 2040 (kept within range).
-#' @param print_markdown Logical; if `TRUE`, prints a markdown summary and the
+#' @param print_markdown Logical; if TRUE, prints a markdown summary and the
 #'   selected diagnostic rows. Returned values are not formatted.
 #'
-#' @return A list with:
-#' \describe{
-#'   \item{summary_tbl}{Tibble with columns `Sex`, `Time Period`,
-#'         and **numeric** `Expected Cases`.}
-#'   \item{diag_filtered}{Tibble of selected years with columns:
-#'         `Sex`, `year`, `alive_start`, `new_cases_year`, `deaths_year`,
-#'         `aged_out_year`, `alive_end`, `cum_cases`.}
-#' }
-#'
-#' @examples
-#' \dontrun{
-#' # See README for a full runnable example
-#' }
+#' @return list(summary_tbl, projection_tbl)
 #' @importFrom dplyr mutate select left_join group_by summarise add_row filter bind_rows arrange rename any_of
 #' @importFrom tibble tibble
 #' @importFrom purrr pmap_dfr map_dfr
@@ -56,7 +52,7 @@ run_cancer_projection <- function(counts_5y,
                                   diag_years = NULL,
                                   print_markdown = TRUE) {
 
-  # --- validations -----------------------------------------------------------
+  # --- basic validations -----------------------------------------------------
   req_cols <- c("age_band", "N")
   if (!all(req_cols %in% names(counts_5y))) {
     stop("`counts_5y` must have columns: ", paste(req_cols, collapse = ", "))
@@ -91,6 +87,16 @@ run_cancer_projection <- function(counts_5y,
 
   ages_full <- seq.int(age_min, age_max)
 
+  # --- strict validation of bands & coverage (catches 'o' vs '0') -----------
+  # Cohort band strings: validate format only (coverage not required here)
+  invisible(expand_bands_df(counts_5y, "age_band", ages_full))
+
+  # Rate tables: validate strings, overlaps, and exact single-age coverage
+  assert_bands_and_coverage(female_inc_wide, "band", ages_full, "Female incidence")
+  assert_bands_and_coverage(female_mort_5y,  "band", ages_full, "Female mortality")
+  assert_bands_and_coverage(male_inc_wide,   "band", ages_full, "Male incidence")
+  assert_bands_and_coverage(male_mort_5y,    "band", ages_full, "Male mortality")
+
   # --- compute per sex ------------------------------------------------------
   female_out <- .project_expected_cases_one_sex(
     counts_5y, female_share, female_inc_wide, female_mort_5y,
@@ -101,15 +107,15 @@ run_cancer_projection <- function(counts_5y,
     start_year = begin_year, end_year = end_year, ages_full = ages_full
   )
 
-  # Numeric summary (keep numeric; format only when printing)
-  tp <- paste0(begin_year, "\u2013", end_year)  # en dash
+  # Summary (keep numeric; round only for display)
+  tp <- paste0(begin_year, "-", end_year)
   summary_tbl <- tibble::tibble(
     Sex = c("Female", "Male", "Total"),
     `Time Period` = tp,
     `Expected Cases` = c(
-      round(female_out$total_cases, 1),
-      round(male_out$total_cases, 1),
-      round(female_out$total_cases + male_out$total_cases, 1)
+      female_out$total_cases,
+      male_out$total_cases,
+      female_out$total_cases + male_out$total_cases
     )
   )
 
@@ -123,32 +129,139 @@ run_cancer_projection <- function(counts_5y,
       deaths_year, aged_out_year, alive_end, cum_cases
     )
 
-
   diag_filtered <- diag_view |>
     dplyr::filter(.data$year %in% diag_years)
 
   if (isTRUE(print_markdown)) {
     .print_md_summary(summary_tbl)  # pretty print; keeps returned data numeric
-    print(diag_filtered)
+    # Optional: integer-only display for diagnostics
+    diag_display <- diag_filtered |>
+      dplyr::mutate(
+        alive_start    = round(alive_start),
+        new_cases_year = round(new_cases_year),
+        deaths_year    = round(deaths_year),
+        aged_out_year  = round(aged_out_year),
+        alive_end      = alive_start - deaths_year - aged_out_year,
+        cum_cases      = cumsum(new_cases_year)
+      )
+    print(diag_display)
   }
 
   invisible(list(
-    summary_tbl   = summary_tbl,
+    summary_tbl    = summary_tbl,
     projection_tbl = diag_filtered
   ))
 }
 
-# ---- internal helpers -------------------------------------------------------
+# ==================== helpers: parsing/validation ============================
 
-# Pretty markdown summary (formats only for display)
+normalize_band <- function(b) {
+  b <- gsub("\\s+", "", as.character(b))
+  # normalize unicode dashes to ASCII hyphen
+  b <- gsub("\u2013", "-", b, fixed = TRUE)  # en dash
+  b <- gsub("\u2014", "-", b, fixed = TRUE)  # em dash
+  b
+}
+
+valid_band_string <- function(b) {
+  # allow only: NN-NN or NN+ (digits, hyphen, plus), no letters
+  grepl("^[0-9]+(\\+|-[0-9]+)$", b)
+}
+
+parse_band_strict <- function(b, ages_full) {
+  b0 <- normalize_band(b)
+  if (!valid_band_string(b0)) {
+    stop("Invalid age band '", b, "'. Use NN-NN or NN+ (digits only).")
+  }
+  if (grepl("\\+$", b0)) {
+    lo <- as.numeric(sub("\\+.*$", "", b0))
+    hi <- max(ages_full)
+  } else {
+    lo <- as.numeric(sub("-.*$", "", b0))
+    hi <- as.numeric(sub("^.*-", "", b0))
+  }
+  if (is.na(lo) || is.na(hi) || hi < lo) stop("Failed to parse age band: '", b, "'.")
+  c(lo = lo, hi = hi)
+}
+
+expand_bands_df <- function(tbl, col, ages_full) {
+  raw <- tbl[[col]]
+  if (is.null(raw)) stop("Column '", col, "' not found.")
+  nb  <- normalize_band(raw)
+  if (any(!valid_band_string(nb))) {
+    bad <- unique(raw[!valid_band_string(nb)])
+    stop("Found invalid age bands in '", col, "': ", paste(bad, collapse = ", "),
+         ". Allowed: NN-NN or NN+; no letters (e.g., '0' not 'o').")
+  }
+  parsed <- t(vapply(nb, parse_band_strict, numeric(2), ages_full = ages_full))
+  out <- data.frame(band_raw = raw, lo = parsed[, "lo"], hi = parsed[, "hi"], stringsAsFactors = FALSE)
+  out[order(out$lo, out$hi), , drop = FALSE]
+}
+
+detect_overlaps <- function(bands_df) {
+  # assumes sorted by lo, hi
+  df <- bands_df[order(bands_df$lo, bands_df$hi), ]
+  overlaps <- which(df$lo[-1] <= df$hi[-nrow(df)])
+  overlaps
+}
+
+check_open_ended <- function(bands_df) {
+  open_idx <- grep("\\+$", normalize_band(bands_df$band_raw))
+  if (length(open_idx) > 1) {
+    stop("Multiple open-ended bands found (e.g., 85+ and 90+). Keep exactly one.")
+  }
+  invisible(TRUE)
+}
+
+assert_exact_single_age_coverage <- function(bands_df, ages_full, label) {
+  # Every age in ages_full must be covered by exactly one band
+  cover_counts <- integer(length(ages_full))
+  names(cover_counts) <- ages_full
+  for (i in seq_len(nrow(bands_df))) {
+    lo <- bands_df$lo[i]; hi <- bands_df$hi[i]
+    idx <- which(ages_full >= lo & ages_full <= hi)
+    if (length(idx)) cover_counts[idx] <- cover_counts[idx] + 1L
+  }
+  zero_ages  <- ages_full[cover_counts == 0L]
+  multi_ages <- ages_full[cover_counts > 1L]
+
+  if (length(zero_ages)) {
+    stop(label, ": rate coverage is missing for ages ",
+         paste(range(zero_ages), collapse = "-"),
+         " (example ages: ", paste(head(zero_ages, 10), collapse = ", "), ").")
+  }
+  if (length(multi_ages)) {
+    stop(label, ": overlapping rate bands detected around ages ",
+         paste(range(multi_ages), collapse = "-"),
+         ". Remove overlaps so each age maps to exactly one band.")
+  }
+  invisible(TRUE)
+}
+
+assert_bands_and_coverage <- function(rate_tbl, band_col, ages_full, label) {
+  bands_df <- expand_bands_df(rate_tbl, band_col, ages_full)
+  # explicit overlap check (fast fail, clearer message)
+  ol <- detect_overlaps(bands_df)
+  if (length(ol)) {
+    bad_pairs <- paste0("['", bands_df$band_raw[ol], "' overlaps '", bands_df$band_raw[ol + 1], "']")
+    stop(label, ": overlapping bands: ", paste(bad_pairs, collapse = ", "), ".")
+  }
+  check_open_ended(bands_df)
+  assert_exact_single_age_coverage(bands_df, ages_full, label)
+  invisible(TRUE)
+}
+
+# ==================== pretty printing (display rounding) =====================
+
 .print_md_summary <- function(df) {
   stopifnot(is.data.frame(df))
   fmt <- df
   fmt$Sex <- ifelse(fmt$Sex == "Total", "**Total**", fmt$Sex)
+  disp_vals <- round(df$`Expected Cases`)  # whole numbers for display
   fmt$`Expected Cases` <- ifelse(
     fmt$Sex == "**Total**",
-    paste0("**", format(round(df$`Expected Cases`, 1), nsmall = 1), "**"),
-    format(round(df$`Expected Cases`, 1), nsmall = 1)
+    paste0("**", format(disp_vals, big.mark = ","), "**"),
+    format(disp_vals, big.mark = ",")
   )
 
   cat("\n| Sex | Time Period | Expected Cases |\n")
@@ -159,90 +272,55 @@ run_cancer_projection <- function(counts_5y,
   })
 }
 
+# ==================== core expansion & projection ===========================
+
 .expand_counts_to_single_years <- function(counts_5y, sex_prop, ages_full) {
-  # Parse a single band like "40-44", "85+", "40-44", " 40-44 "
-  parse_band_5y <- function(b) {
-    b <- gsub("\\s+", "", as.character(b))
-    b <- gsub("-", "-", b)         # normalize en-dash
-    if (grepl("\\+$", b)) {
-      lo <- as.numeric(sub("\\+.*$", "", b))
-      hi <- max(ages_full)
-    } else if (grepl("^\\d+-\\d+$", b)) {
-      lo <- as.numeric(sub("-.*$", "", b))
-      hi <- as.numeric(sub("^.*-", "", b))
-    } else {
-      # fallback: extract numbers; if only one, treat as single-year band
-      nums <- as.numeric(unlist(regmatches(b, gregexpr("\\d+", b))))
-      if (length(nums) >= 2) { lo <- nums[1]; hi <- nums[2] }
-      else if (length(nums) == 1) { lo <- nums[1]; hi <- nums[1] }
-      else { lo <- NA_real_; hi <- NA_real_ }
-    }
-    c(lo = lo, hi = hi)
-  }
-
-  # Expand each 5y band to single-year counts (split evenly)
+  # Expand each 5-year band to single-year counts (equal split within the band)
   rows <- purrr::pmap_dfr(counts_5y, function(age_band, N) {
-    rng <- parse_band_5y(age_band)
+    rng <- parse_band_strict(age_band, ages_full)
     lo <- rng["lo"]; hi <- rng["hi"]
-
-
-
-    # Defensive guard: if parse failed, keep zero rows for that band (no warning)
-    if (is.na(lo) || is.na(hi) || hi < lo) {
-      return(tibble::tibble(age = integer(0), n = numeric(0)))
-    }
-
-    w <- hi - lo + 1
+    w  <- hi - lo + 1
     tibble::tibble(age = lo:hi, n = (N * sex_prop) / w)
   })
 
-  # Align to the modeled age range; fill missing ages with 0
-  tibble::tibble(age = ages_full) |>
+  # Align to modeled range; fill missing ages with 0
+  out <- tibble::tibble(age = ages_full) |>
     dplyr::left_join(
       rows |>
         dplyr::group_by(.data$age) |>
         dplyr::summarise(n = sum(.data$n), .groups = "drop"),
       by = "age"
     ) |>
-  dplyr::mutate(alive_start = dplyr::coalesce(.data$n, 0)) |>
+    dplyr::mutate(alive_start = dplyr::coalesce(.data$n, 0)) |>
     dplyr::select(age, alive_start)
-}
 
+  # Conservation check
+  total_expected <- sum(counts_5y$N) * sex_prop
+  if (abs(sum(out$alive_start) - total_expected) > 1e-6) {
+    stop("Expanded counts do not sum to the expected total after band expansion.")
+  }
+
+  out
+}
 
 .map_flat_rate_to_single_years <- function(rate_tbl, col_name, ages_full) {
   rt <- rate_tbl |>
     dplyr::rename(band = dplyr::any_of(c("age_band","band"))) |>
     dplyr::rename(rate_per100k = dplyr::any_of(c("inc_per100k","mort_per100k","rate_per100k")))
 
-  parse_band <- function(b) {
-    b <- gsub("\\s+", "", as.character(b))
-    b <- gsub("\u2013", "-", b)  # normalize en-dash if present
-    if (grepl("\\+$", b)) {
-      lo <- as.numeric(sub("\\+.*$", "", b)); hi <- max(ages_full)
-    } else if (grepl("^\\d+-\\d+$", b)) {
-      lo <- as.numeric(sub("-.*$", "", b))
-      hi <- as.numeric(sub("^.*-", "", b))
-    } else {
-      nums <- as.numeric(unlist(regmatches(b, gregexpr("\\d+", b))))
-      if (length(nums) >= 2) { lo <- nums[1]; hi <- nums[2] }
-      else if (length(nums) == 1) { lo <- nums[1]; hi <- nums[1] }
-      else { lo <- NA_real_; hi <- NA_real_ }
-    }
-    c(lo = lo, hi = hi)
-  }
-
-  parsed <- t(vapply(rt$band, parse_band, numeric(2)))
+  parsed <- t(vapply(rt$band, parse_band_strict, numeric(2), ages_full = ages_full))
   bins <- rt |>
     dplyr::mutate(lo = parsed[, "lo"], hi = parsed[, "hi"]) |>
     dplyr::arrange(.data$lo, .data$hi)
 
   purrr::map_dfr(ages_full, function(a) {
-    row <- dplyr::filter(bins, !is.na(.data$lo), !is.na(.data$hi), a >= .data$lo, a <= .data$hi)
-    rate <- if (nrow(row) > 0) row$rate_per100k[1] else 0
-    # dynamic column name without := / tidy-eval
-    tibble::as_tibble(setNames(list(a, rate), c("age", col_name)))
+    # vectorized match: which bands cover age 'a'?
+    idx <- which(a >= bins$lo & a <= bins$hi)
+    rate <- if (length(idx) > 0) bins$rate_per100k[idx[1]] else 0
+    tibble::tibble(!!"age" := a, !!col_name := rate)
   })
 }
+
 
 .project_expected_cases_one_sex <- function(counts_5y, sex_prop, incidence_bins, mortality_bins,
                                             start_year, end_year, ages_full) {
@@ -318,4 +396,3 @@ run_cancer_projection <- function(counts_5y,
     diag_by_year = diag
   )
 }
-

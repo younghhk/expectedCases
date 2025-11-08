@@ -30,9 +30,9 @@ and \code{N} (combined sexes baseline counts).}
 if they do not sum to 1.}
 
 \item{female_inc_wide, female_mort_5y}{Tibbles with \code{band}, \code{rate_per100k}
-for \strong{female} incidence and mortality.}
+for female incidence and mortality.}
 
-\item{male_inc_wide, male_mort_5y}{Same for \strong{male}.}
+\item{male_inc_wide, male_mort_5y}{Same for male.}
 
 \item{study_start, study_end}{Integers, recruitment window.}
 
@@ -46,18 +46,11 @@ for \strong{female} incidence and mortality.}
 \item{diag_years}{Optional integer vector of years to return in diagnostics;
 default includes \code{begin_year}, 2030, 2040 (kept within range).}
 
-\item{print_markdown}{Logical; if \code{TRUE}, prints a markdown summary and the
+\item{print_markdown}{Logical; if TRUE, prints a markdown summary and the
 selected diagnostic rows. Returned values are not formatted.}
 }
 \value{
-A list with:
-\describe{
-\item{summary_tbl}{Tibble with columns \code{Sex}, \verb{Time Period},
-and \strong{numeric} \verb{Expected Cases}.}
-\item{diag_filtered}{Tibble of selected years with columns:
-\code{Sex}, \code{year}, \code{alive_start}, \code{new_cases_year}, \code{deaths_year},
-\code{aged_out_year}, \code{alive_end}, \code{cum_cases}.}
-}
+list(summary_tbl, projection_tbl)
 }
 \description{
 Estimates expected cancer cases over time for a defined cohort, using flat
@@ -68,9 +61,4 @@ Separate tables of age-band rates must be supplied for cancer incidence and
 all-cause mortality, for both females and males. Tables include \code{band}
 and \code{rate_per100k}. Open-ended bands like "85+" are supported and extended
 to \code{age_max}.
-}
-\examples{
-\dontrun{
-# See README for a full runnable example
-}
 }

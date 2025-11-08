@@ -8,7 +8,7 @@ library(dplyr)
 library(tibble)
 library(expectedCases)
 
-# --- Shared test fixturesult (tiny, fast, deterministic) -----------------------
+# --- Shared test fixtures (tiny, fast, deterministic) -----------------------
 
 counts_5y <- tibble::tibble(
   age_band = c("40-44","45-49","50-54","55-59"),
@@ -18,9 +18,11 @@ counts_5y <- tibble::tibble(
 female_share <- 0.60
 male_share   <- 0.40
 
+# Incidence fixtures must cover age_min:age_max used in tests below (40..100).
+# Add 85+ so coverage extends to the modeled max age.
 female_inc_wide <- tibble::tibble(
-  band = c("40-54","55-69","70-85"),
-  rate_per100k = c(39, 102, 278)
+  band = c("40-54","55-69","70-84","85+"),
+  rate_per100k = c(39, 102, 278, 400)  # last value arbitrary but plausible
 )
 
 female_mort_5y <- tibble::tibble(
@@ -29,8 +31,8 @@ female_mort_5y <- tibble::tibble(
 )
 
 male_inc_wide <- tibble::tibble(
-  band = c("40-54","55-69","70-85"),
-  rate_per100k = c(45, 148, 338)
+  band = c("40-54","55-69","70-84","85+"),
+  rate_per100k = c(45, 148, 338, 500)
 )
 
 male_mort_5y <- tibble::tibble(
@@ -78,7 +80,6 @@ test_that("accounting identity holds at the yearly total level", {
 
   pt <- result$projection_tbl
   # alive_end + aged_out_year == alive_start − deaths_year
-
   lhs <- pt$alive_end + pt$aged_out_year
   rhs <- pt$alive_start - pt$deaths_year
   expect_equal(unname(lhs), unname(rhs), tolerance = 1e-8)
@@ -91,6 +92,7 @@ test_that("per-sex totals in summary equal sum of yearly new cases", {
     N        = c(100, 100)
   )
 
+  # Keep tiny 40–49-only fixtures and model only through 49 so coverage is exact.
   female_inc_wide_local <- tibble::tibble(band = c("40-44","45-49"), rate_per100k = c(50, 60))
   female_mort_5y_local  <- tibble::tibble(band = c("40-44","45-49"), rate_per100k = c(200, 250))
   male_inc_wide_local   <- tibble::tibble(band = c("40-44","45-49"), rate_per100k = c(50, 60))
@@ -104,21 +106,22 @@ test_that("per-sex totals in summary equal sum of yearly new cases", {
     female_inc_wide_local, female_mort_5y_local,
     male_inc_wide_local,   male_mort_5y_local,
     study_start = begin, study_end = begin + 1,
-    age_min = 40, age_max = 60,
+    age_min = 40, age_max = 49,   # was 60; now aligned with the fixtures
     end_year = finish,
     diag_years = begin:finish,
     print_markdown = FALSE
   )
 
   # Sum of yearly new cases by sex across the full projection
+
   per_sex_sum <- result$projection_tbl |>
     dplyr::group_by(Sex) |>
-    dplyr::summarise(total_new = round(sum(new_cases_year), 1), .groups = "drop")
+    dplyr::summarise(total_new = sum(new_cases_year), .groups = "drop")
+
 
   sum_tbl <- result$summary_tbl |>
     dplyr::filter(Sex %in% c("Female","Male","Total")) |>
     dplyr::mutate(`Expected Cases` = as.numeric(`Expected Cases`))
-
 
   # Compare Female / Male
   chk <- dplyr::left_join(
@@ -170,3 +173,47 @@ test_that("open-ended rate bands like '85+' are handled and cumulative cases are
   }
 })
 
+
+test_that("rate coverage gap is rejected", {
+  female_inc_gap <- tibble::tibble(
+    band = c("40-49","60-69"),        # gap: 50–59
+    rate_per100k = c(50, 120)
+  )
+  expect_error(
+    run_cancer_projection(
+      counts_5y,
+      female_share, male_share,
+      female_inc_gap, female_mort_5y,
+      male_inc_wide,  male_mort_5y,
+      study_start = 2020, study_end = 2021,
+      age_min = 40, age_max = 70, end_year = 2025, print_markdown = FALSE
+    ),
+    regexp = "rate coverage is missing"
+  )
+})
+
+test_that("typing 'o' instead of '0' is caught", {
+  bad <- tibble::tibble(band = c("4o-49","50-59"), rate_per100k = c(10, 20))
+  expect_error(
+    run_cancer_projection(
+      counts_5y, female_share, male_share,
+      bad, female_mort_5y, male_inc_wide, male_mort_5y,
+      study_start = 2020, study_end = 2021,
+      age_min = 40, age_max = 60, end_year = 2025, print_markdown = FALSE
+    ),
+    regexp = "Invalid age band|no letters"
+  )
+})
+
+
+test_that("85+ extends to age_max exactly", {
+  inc <- tibble::tibble(band = c("80-84","85+"), rate_per100k = c(100, 200))
+  res <- run_cancer_projection(
+    tibble::tibble(age_band = c("80-84","85-89"), N = c(50, 50)),
+    0.5, 0.5, inc, female_mort_5y, inc, male_mort_5y,
+    study_start = 2020, study_end = 2020,
+    age_min = 80, age_max = 100, end_year = 2021,
+    print_markdown = FALSE
+  )
+  expect_true(all(res$projection_tbl$cum_cases >= 0))
+})
