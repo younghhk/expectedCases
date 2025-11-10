@@ -2,14 +2,10 @@ Package: expectedCases
 Type: Package
 Title: Estimate Expected Cancer Cases for Cohorts
 Version:  0.1.2
-Authors@R: 
+Authors@R:
     c(
-      person(given = "Hyokyoung (Grace)",
-             family = "Hong",
-             role = c("aut", "cre"),
-             email = "grace.hong@nih.gov"),
-      person(given = "Contributors",
-             role = "ctb")
+      person("Hyokyoung (Grace)", "Hong", email = "grace.hong@nih.gov", role = c("aut", "cre")),
+      person("Emily", "Vogtmann", role = "aut")
     )
 Maintainer: Hyokyoung G. Hong <grace.hong@nih.gov>
 Description: Estimates expected cancer cases over time for a study cohort using
