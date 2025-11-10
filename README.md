@@ -4,12 +4,15 @@
 [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 <!-- badges: end -->
   
+
+> 🧬 **For additional cancer research software and tools**, visit  
+> [Cancer Research Software Repository](https://github.com/younghhk/NCI)
 ## expectedCases
 
 Project expected cancer cases for a cohort using age-specific incidence and mortality rates. The package expands 5-year age-band counts to single-year ages, applies sex-specific rates, and simulates annual aging, incidence, and all-cause mortality.
 
 This repository is currently restricted to authorized collaborators until the program is fully verified.  
-For other cancer research software, see [younghhk/NCI](https://github.com/younghhk/NCI).
+
 
 📘 See the full vignette: [Tutorial: expectedCases](https://github.com/younghhk/expectedCases/blob/master/Vignettes_expectedCases.pdf)
 
