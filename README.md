@@ -131,7 +131,7 @@ ggplot(projection_tbl, aes(year, cum_cases, color = Sex)) +
 
 If you use this code or method, please cite as:
 
-Vogtmann, E. & Hong, G. (2025). Projecting Expected  Cancer Cases for Cohort Data. GitHub Repository.
+Vogtmann, E. & Hong, G. H. (2025). Projecting Expected  Cancer Cases for Cohort Data. GitHub Repository.
 
 
 
