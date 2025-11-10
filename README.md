@@ -14,7 +14,7 @@ Project expected cancer cases for a cohort using age-specific incidence and mort
 This repository is currently restricted to authorized collaborators until the program is fully verified.  
 
 
-📘 See the full vignette: [Tutorial: expectedCases](https://github.com/younghhk/expectedCases/blob/master/Vignettes_expectedCases.pdf)
+📘 See the full vignette: [Tutorial: expectedCases](https://github.com/younghhk/expectedCases/blob/master/vignette.pdf)
 
 ## Installation
 
