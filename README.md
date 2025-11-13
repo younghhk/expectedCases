@@ -5,8 +5,9 @@
 <!-- badges: end -->
   
 
-> 🧬 **For additional cancer research software and tools**, visit  
-> [Cancer Research Software Repository](https://github.com/younghhk/NCI)
+
+[![Cancer Research Software Hub](https://img.shields.io/badge/Back_to-Hub-blue)](https://github.com/younghhk/NCI)
+
 ## expectedCases
 
 Project expected cancer cases for a cohort using age-specific incidence and mortality rates. The package expands 5-year age-band counts to single-year ages, applies sex-specific rates, and simulates annual aging, incidence, and all-cause mortality.
