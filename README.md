@@ -42,11 +42,14 @@ This quick start shows how to:
 5.	interpret / visualize results.
 
 ### Requirements
-	
-  -  Cohort age distribution can be in age-bands (e.g., 30-34, 35-39, 40-44, etc years old) or per year of age.	
-  -  Rate bands must be digits only (NN-NN or NN+), and must cover every single age from the minimum age to the maximum age of interest (age_min:age_max) exactly once (i.e., no gaps/overlaps).
-  -  Incidence and mortality rates are input as cases/100,000 population.
-  -  If you plan to model up to age 100, for example (age_max = 100), include an open-ended incidence and mortality band like "80+" so older ages are covered.
+
+- Cohort age distribution may use bands of any width (1-year, 5-year, 10-year, or mixed).
+
+- Incidence and mortality rate bands must follow valid numeric formatting (NN-NN or NN+) and must cover every single age in age_min:age_max exactly once (no gaps or overlaps).
+
+- Rates must be expressed per 100,000 population.
+
+- If modeling to higher ages (e.g., age_max = 100), include an open-ended band such as "80+" so all ages above the last closed band are covered.
 
 ## 1) Create the baseline cohort
 ```{r}
@@ -104,7 +107,7 @@ res <- run_cancer_projection(
   study_start = 2020, study_end = 2025, # input the years for the start and end of study recruitment
   age_min = 40, age_max = 100,
   end_year = 2040,
-  diag_years = 2022:2040,   # return annual rows for inspection/plots
+  diag_years = 2022:2040,   # return diagnostic rows for these specific years
   print_markdown = FALSE
 )
 
