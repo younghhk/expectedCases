@@ -43,7 +43,7 @@ This quick start shows how to:
 
 ### Requirements
 
-- Cohort age distribution may use bands of any width (1-year, 5-year, 10-year, or mixed).
+- Cohort age distribution may use bands of any width (1-year, 5-year, 10-year, or mixed). Wider age bands may be less precise.
 
 - Incidence and mortality rate bands must follow valid numeric formatting (NN-NN or NN+) and must cover every single age in age_min:age_max exactly once (no gaps or overlaps).
 
@@ -58,44 +58,46 @@ library(tibble)
 library(ggplot2)
 library(dplyr)
 
+# example based on cohort data from the Cancer Prevention Study-3 Gut and Oral Microbiome Substudy (GOMS)
+# PMID: 40889876
 # input cohort age distribution
-counts_5y <- tibble(
-  age_band = c("40-44","45-49","50-54","55-59"),
-  N        = c(2694, 3480, 4166, 4964)
+counts_5y <- tibble::tibble(
+  age_band = c("40-44","45-49","50-54","55-59","60-64","65-69","70-74"),
+  N        = c(1095, 1103, 1463, 2004, 2622, 2827, 2433)
+)
 
 # input sex distribution proportions for the cohort
-female_share <- 0.6
-male_share   <- 0.4
+female_share <- 0.769
+male_share   <- 0.231
 
-# input female cancer incidence rate (cases/100,000 population)
+# input female cancer incidence rates (cases/100,000 population)
+# incidence data from Globocan 2022 version 1.1 (https://gco.iarc.fr/today/en/dataviz/)
+# colorectal cancer
 female_inc_wide <- tibble(
-  band = c("40-54", "55-69", "70-84", "85+"),
-  rate_per100k = c(39, 102, 278, 400)
+  band = c("40-54","55-69","70+"),
+  rate_per100k = c(41.6, 89.1, 143.8)
 )
 
-# input female all-cause mortality rate (cases/100,000 population)
+# input female all-cause mortality rates (cases/100,000 population)
+# mortality data from WHO mortality database (https://www.who.int/data/data-collection-tools/who-mortality-database)
+# US age- and sex-specific mortality rates for 2022
 female_mort_5y <- tibble(
-  band = c("40-44","45-49","50-54","55-59","60-64","65-69","70-74","75-79","80-84","85+"),
-  rate_per100k = c(87, 138, 214, 309, 455, 707, 1164, 2104, 4133, 13700)
+ band = c("40-44","45-49","50-54","55-59","60-64","65-69","70-74","75-79","80-84","85+"),
+  rate_per100k = c(207.4,268.6,411.0,615.0,921.9,1291.2,1941.0,3176.6,5358.5,12841.0)
 )
 
-# input male cancer incidence rate (cases/100,000 population)
+# input male cancer incidence rates (cases/100,000 population)
 male_inc_wide <- tibble(
-  band = c("40-54","55-69","70-84","85+"),
-  rate_per100k = c(45, 148, 338, 500)
+  band = c("40-54","55-69","70+"),
+  rate_per100k = c(51.4, 119.6, 174.3)
 )
 
-# input male all-cause mortality rate (cases/100,000 population)
+# input male all-cause mortality rates (cases/100,000 population)
 male_mort_5y <- tibble(
   band = c("40-44","45-49","50-54","55-59","60-64","65-69","70-74","75-79","80-84","85+"),
-  rate_per100k = c(155, 225, 337, 506, 789, 1190, 1888, 3239, 5974, 15415)
+  rate_per100k = c(382.5,465.5,684.5,990.6,1479.5,2045.3,2897.5,4532.0,7103.3,13876.6)
 )
 ```
-
-## Validation behavior
-
-- Band strings are strictly parsed: only NN-NN or NN+. Typos like "4o-44" (letter “o”) error out.
-- Coverage is enforced: each single age in age_min:age_max must be covered by exactly one rate band (no gaps/overlaps). If you see a coverage error, add an open-ended band (e.g., "85+") or lower age_max.
 
 ## 3) Run the projection
 ```{r}
@@ -104,7 +106,7 @@ res <- run_cancer_projection(
   female_share = female_share, male_share = male_share,
   female_inc_wide, female_mort_5y,
   male_inc_wide,   male_mort_5y,
-  study_start = 2020, study_end = 2025, # input the years for the start and end of study recruitment
+  study_start = 2020, study_end = 2023, # input the years for the start and end of study recruitment
   age_min = 40, age_max = 100,
   end_year = 2040,
   diag_years = 2022:2040,   # return diagnostic rows for these specific years
@@ -137,12 +139,6 @@ ggplot(projection_tbl, aes(year, cum_cases, color = Sex)) +
 ```
 
 
-## Tips & troubleshooting
-
-- If you get a coverage error, add an "85+" tail (or reduce age_max) and ensure bands don’t overlap.
-
-
-
 ## Citation
 
 If you use this code or method, please cite as:
@@ -155,5 +151,5 @@ Vogtmann, E. & Hong, G. H. (2025). Projecting Expected  Cancer Cases for Cohort 
 
 Access is currently limited to authorized collaborators pending full program verification.
 
-Last updated: October 2025
+Last updated: December 2025
 
