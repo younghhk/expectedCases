@@ -15,8 +15,6 @@ This code projects expected cancer cases for a prospective cohort study using ag
 This repository is currently restricted to authorized collaborators until the program is fully verified.  
 
 
-📘 See the full vignette: [Tutorial: expectedCases](https://github.com/younghhk/expectedCases/blob/master/vignette.pdf)
-
 ## Installation
 
 ```{r}
